@@ -1,0 +1,13 @@
+
+*.pth
+*.ckpt
+
+*.log
+
+__pycache__/
+
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db
