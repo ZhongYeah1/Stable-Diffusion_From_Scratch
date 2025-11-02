@@ -41,7 +41,14 @@ class SelfAttention(nn.Module):
 
         weight = F.softmax(weight, dim=-1)
 
-        # (Batch_Size, H, Seq_Len, Seq_Len) 
+        # (Batch_Size, H, Seq_Len, Seq_Len) @ 
         output = weight @ v
 
-        
+        output = output.transpose(1, 2)
+
+        output = output.reshape(input_shape)
+
+        output = self.out_proj(output)
+
+        # (Batch_Size, Seq_Len, Dim)
+        return output
