@@ -41,7 +41,7 @@ class SelfAttention(nn.Module):
 
         weight = F.softmax(weight, dim=-1)
 
-        # (Batch_Size, H, Seq_Len, Seq_Len) @ 
+        # (Batch_Size, H, Seq_Len, Seq_Len) @ (Batch_Size, H, Seq_Len, Dim / H)
         output = weight @ v
 
         output = output.transpose(1, 2)
@@ -52,3 +52,48 @@ class SelfAttention(nn.Module):
 
         # (Batch_Size, Seq_Len, Dim)
         return output
+
+class CrossAttention(nn.Module): 
+
+    def __init__(self, n_heads: int, d_embd: int, d_cross: int, in_proj_bias=True, out_proj_bias=True): 
+        super().__init__()
+        self.q_proj = nn.Linear(d_embd, d_embd, bias=in_proj_bias)
+        self.k_proj = nn.Linear(d_cross, d_embd, bias=in_proj_bias)
+        self.v_proj = nn.Linear(d_cross, d_embd, bias=in_proj_bias)
+        self.out_proj = nn.Linear(d_embd, d_embd, bias=in_proj_bias)
+        self.n_heads = n_heads
+        self.d_head = d_embd // n_heads
+    
+    def forward(self, x, y): 
+        # x: (latent): (Batch_Size, Seq_Len_Q, Dim_Q)
+        # y: (context): (Batch_Size, Seq_Len_K or V, Dim_K or V) = (Batch_Size, 77, 768)
+
+        input_shape = x.shape
+        batch_size, sequence_length, d_embd = input_shape
+
+        interm_shape = (batch_size, -1, self.n_heads, self.d_head) # -1: auto adapt
+
+        q = self.q_proj(x)
+        k = self.k_proj(y)
+        v = self.v_proj(y)
+
+        q = q.view(interm_shape).transpose(1, 2)
+        k = k.view(interm_shape).transpose(1, 2)
+        v = v.view(interm_shape).transpose(1, 2)
+
+        weight = q @ k.transpose(-1, -2)
+        weight /= math.sqrt(d_embd)
+        weight = F.softmax(weight, dim=-1)
+
+        output = weight @ v
+
+        output = output.transpose(1, 2).contiguous()
+
+        output = output.view(input_shape)
+
+        output = self.out_proj(output)
+
+        return output
+
+
+
