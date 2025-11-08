@@ -189,7 +189,7 @@ class UNET(nn.Module):
 
         self.bottleneck = SwitchSequential(
 
-            UNET_ResidualBlcok(1280, 1280), 
+            UNET_ResidualBlock(1280, 1280), 
             
             UNET_AttentionBlock(8, 160), 
 
@@ -248,7 +248,7 @@ class Diffuion(nn.Module):
         super().__init__()
         self.time_embedding = TimeEmbedding(320)
         self.unet = UNET()
-        self.final = UNET_OutPutLayer(320, 4)
+        self.final = UNET_OutputLayer(320, 4)
 
     def forward(self, latent: torch.Tensor, context: torch.Tensor, time: torch.Tensor): 
         # latent: (Batch_Size, 4, Height / 8, Width / 8)
