@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from sd.attention import SelfAttention, CrossAttention
+from attention import SelfAttention, CrossAttention
 
 class TimeEmbedding(nn.Module): 
 
@@ -242,7 +242,7 @@ class UNET_OutputLayer(nn.Module):
         # x: (Batch_Size, 4, Height/8, Width / 8)
         return x
 
-class Diffuion(nn.Module): 
+class Diffusion(nn.Module): 
     # Unet
     def __init__(self): 
         super().__init__()

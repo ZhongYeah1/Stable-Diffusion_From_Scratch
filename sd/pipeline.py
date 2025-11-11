@@ -43,7 +43,7 @@ def generate(prompt: str,
 
         if do_cfg: 
             # Convert the prompt into tokens using the tokenizer
-            # add the padding to the maxlength
+            # add the padding to the maxlength 
             cond_tokens = tokenizer.batch_encode_plus([prompt], padding="max_length", max_length=77).input_ids
             # (Batch_Size, Seq_Len)
             cond_tokens = torch.tensor(cond_tokens, dtype=torch.long, device=device)

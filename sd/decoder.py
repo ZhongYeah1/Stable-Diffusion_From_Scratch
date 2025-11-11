@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from sd.attention import SelfAttention
+from attention import SelfAttention
 
 class VAE_AttentionBlock(nn.Module): 
     def __init__(self, channels: int): 
@@ -39,7 +39,7 @@ class VAE_AttentionBlock(nn.Module):
 class VAE_ResidualBlock(nn.Module): 
     def __init__(self, in_channels, out_channels): 
         super().__init__()
-        self.groupnorm_1 == nn.GroupNorm(32, in_channels)
+        self.groupnorm_1 = nn.GroupNorm(32, in_channels)
         self.conv_1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
  
         self.groupnorm_2 = nn.GroupNorm(32, out_channels)
@@ -71,7 +71,7 @@ class VAE_ResidualBlock(nn.Module):
     
 class VAE_Decoder(nn.Sequential): 
 
-    def __init__(): 
+    def __init__(self): 
         super().__init__(
             nn.Conv2d(4, 4, kernel_size=1, padding=0), 
 
@@ -116,7 +116,7 @@ class VAE_Decoder(nn.Sequential):
 
             nn.GroupNorm(32, 128), 
 
-            nn.Silu(), 
+            nn.SELU(), 
 
             # (Batch_Size, 128, Height, Width) -> (Batch_Size, 3, Height, Width)
             nn.Conv2d(128, 3, kernel_size=3, padding=1)
