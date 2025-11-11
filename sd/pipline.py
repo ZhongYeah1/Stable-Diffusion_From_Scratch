@@ -11,7 +11,7 @@ LATENTS_HEIGHT = HEIGHT // 8
 def generate(prompt: str, 
              uncond_prompt: str, # classifier free guidance, combine output. More of a negative prompt, things that we do not want. 
              input_image=None, 
-             strength=0.8, 
+             strength=0.8, # 0 to 1
              do_cfg=True, # weight w. cfg: w * (output_cond - output_uncond) + output_uncond
              cfg_scale=7.5, # 1 to 14, how much we want model to pay attention to the prompt
              sampler_name="ddpm", 
@@ -21,6 +21,7 @@ def generate(prompt: str,
              device=None, 
              idle_device=None, 
              tokenizer=None): 
+    
     with torch.no_grad(): 
         if not (0 < strength <= 1): 
             raise ValueError("strength must be between 0 and 1")
@@ -35,6 +36,8 @@ def generate(prompt: str,
         else: 
             generator.manual_seed(seed)
         
+        
+        #======= classifier free guidance, context enbedding
         clip = models("clip")
         clip.to(device)
 
@@ -62,16 +65,18 @@ def generate(prompt: str,
             # (Batch_Size, Seq_Len) > (Batch_Size, Seq_Len, Dim)
             # (1, 77, 768)
             context = clip(tokens)
+            
         to_idle(clip)
 
+
+        # ========= sampler & latent encoder
         if sampler_name == "ddpm": 
-            sampler = DDPMSampler(generator)
+            sampler = DDPMSampler(generator) # 
             sampler.set_inference_steps(n_inference_steps)
         else: 
             raise ValueError(f"Unknown sampler {sampler_name}")
 
         latents_shape = (1, 4, LATENTS_HEIGHT, LATENTS_WIDTH)
-
 
         # if image to image
         if input_image: 
@@ -101,6 +106,8 @@ def generate(prompt: str,
         else: 
             # start with random noise
             latents = torch.randn(latents_shape, generator=generator, device=device)
+        
+        # ======== diffusion
         
         diffusion = models["diffusion"]
         diffusion.to(device)
@@ -137,8 +144,8 @@ def generate(prompt: str,
 
         images = rescale(images, (-1, 1), (0, 255), clamp=True)
 
-        # (Batch_Szie, Channel, Height, Width) > (Batch_Size, Height, Width, Channel)
-        images = images.permute(0, 2, 3, 1)
+        # (Batch_Size, Channel, Height, Width) > (Batch_Size, Height, Width, Channel)
+        images = images.permute(0, 2, 3, 1) # in order to save the image on cpu
         images = images.to("cpu", torch.uint8).numpy()
         return images[0]
 
@@ -156,6 +163,6 @@ def get_time_embedding(timestep):
     # (160, )
     freqs = torch.pow(10000, -torch.arange(start=0, end=160, dtype=torch.float32) / 160)
     # (1, 160)
-    x = torch.tensor([timestep], dtype=torch.float32)[:, None] * freqs[None]
+    x = torch.tensor([timestep], dtype=torch.float32)[:, None] * freqs.unsqueeze(0)
     # (1, 320)
     return torch.cat([torch.cos(x), torch.sin(x)], dim=-1)
